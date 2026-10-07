@@ -18,3 +18,4 @@
 | # | Key | Method | CV RMSE | Notes |
 |---|---|---|---|---|
 | 01 | `01_dummy` | DummyRegressor (mean) | ~16.5 | Floor baseline |
+| 04 | `04_hgbr_features` | HGBR + FeatureEngineer (rater bias, PD proxy, lags, aggregates) | **4.47 ± 0.09** | Bug corrigé : sort_values dans transform() désalignait X et y. Hub: [49499](https://skore.probabl.ai/bob-slay/bobathon-esilv/estimators/49499) |
