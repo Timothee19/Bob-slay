@@ -1,0 +1,13 @@
+README.md
+pyproject.toml
+src/parkinsons/__init__.py
+src/parkinsons/data.py
+src/parkinsons/evaluate.py
+src/parkinsons/features.py
+src/parkinsons/hub.py
+src/parkinsons/pipeline.py
+src/parkinsons.egg-info/PKG-INFO
+src/parkinsons.egg-info/SOURCES.txt
+src/parkinsons.egg-info/dependency_links.txt
+src/parkinsons.egg-info/top_level.txt
+tests/test_setup.py

@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: parkinsons
+Version: 0.1.0
+Summary: Parkinson's UPDRS regression workspace.
+Requires-Python: >=3.12
