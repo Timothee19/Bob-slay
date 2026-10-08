@@ -85,33 +85,49 @@ f_hat = interpolation(bins_t, median(on/target) par bin)
 on_time_corrected = on / f_hat(time_since_intake_on)   # NaN si t manquant
 ```
 
-#### 3. Agrégats longitudinaux par patient (ST-3)
+#### 3. Agrégats longitudinaux par patient (ST-3) — sans LOO
 
-Calculés depuis les visites du patient dans le **fold train uniquement** :
-- `patient_off_mean` : moyenne de `off_corrected` (proxy du niveau absolu du patient)
+Calculés sur **toutes les visites** du patient dans le fold (sans leave-one-out) :
+- `patient_off_mean` : moyenne de `off_corrected`
 - `patient_on_mean` : moyenne de `on_corrected`
 - `patient_off_std` : écart-type de `off_corrected`
-- `patient_slope` : pente de la régression linéaire `off_corrected ~ age` (vitesse progression)
+- `patient_slope` : pente de la régression linéaire `off_corrected ~ age`
 - `patient_intercept` : ordonnée à l'origine de cette régression
-- `patient_n_visits` : nombre de visites dans le fold train
+- `patient_n_visits` : nombre de visites du patient dans le fold
 - `visit_index` : rang de la visite courante triée par âge
+- `visit_rel_index` : `visit_index / patient_n_visits` (position normalisée)
+- `ledd_velocity` : pente de `ledd ~ age` (vitesse d'escalade de dose, NaN si non traité)
 
-**Anti-fuite critique** : pour une visite en validation, les agrégats proviennent
-exclusivement du fold train. Sur X_test : agrégats depuis X_train complet.
+**Cohérence avec le test** : sur X_test toutes les visites d'un patient sont disponibles
+→ utiliser toutes les visites (pas de LOO) est cohérent et donne un signal plus stable.
 
 #### 4. Features dérivées (ST-4 suite)
 
-- `on_off_diff` : `off_corrected − on_corrected` (fluctuation motrice)
-- `on_off_mean` : `(off_corrected + on_corrected) / 2`
+- `on_off_diff` : `off_corrected − on_corrected` (fluctuation motrice absolue)
+- `on_off_ratio` : `off_corrected / on_corrected` (fluctuation motrice normalisée — invariante au biais absolu)
+- `patient_trend_at_age` : `patient_intercept + patient_slope × age` (prior personnalisé)
+- `off_residual_from_trend` : `off_corrected − patient_trend_at_age` (fluctuation intra-patient)
+
+**Décision** : `on_off_mean` retiré — si OFF est trop bas à une visite, ON l'est aussi (même
+état du patient le même jour). Moyenner ne réduit pas le biais intra-visite.
+
+#### 5. Catégorielles natives
+
+`gene`, `cohort`, `rater_id` passés en dtype `category` — HGBR/LightGBM trouvent les meilleurs
+splits sans ordinalisation forcée. `rater_bias_feature` (float) est conservé en complément.
 
 ---
 
 ## Modèle
 
-Un seul `HistGradientBoostingRegressor` (HGBR) :
-- **Avantage clé** : gestion native des NaN → pas d'imputation nécessaire pour `on`/`off`/`ledd`
-- **Garde contre overfitting** : `early_stopping=True`, `min_samples_leaf=20`, `l2_regularization=0.1`
-- **CV** : `GroupKFold(n_splits=5, groups=patient_id)`
+Deux backends disponibles dans `ParkinsonsPipeline` :
+- **HGBR** (`backend="hgbr"`) : `HistGradientBoostingRegressor` — NaN natif, catégorielles via indices
+- **LightGBM** (`backend="lgbm"`) : `LGBMRegressor` — NaN natif, catégorielles via dtype category
+
+**Post-processing** : lissage Savitzky-Golay (window=5, polyorder=1) sur la séquence
+temporelle de chaque patient après prédiction → réduction du bruit intra-patient.
+
+**CV** : folds fixés dans `data/cv_folds.pkl` — tous les modèles comparables sur les mêmes 5 splits.
 
 ---
 
@@ -126,16 +142,15 @@ Un seul `HistGradientBoostingRegressor` (HGBR) :
 
 ---
 
-## Repères RMSE attendus
+## Repères RMSE (résultats réels GroupKFold)
 
-| Étape | RMSE estimé |
-|---|---|
-| Dummy (moyenne globale) | ~16.5 |
-| HGBR brut sans FE | ~9–11 |
-| + Biais rater | ~8–10 |
-| + Agrégats patient | ~6–8 |
-| + Correction temporelle on | ~5–7 |
-| + Tuning HGBR | ~4.5–6.5 |
+| Expérience | Configuration | RMSE |
+|---|---|---|
+| `01_hgbr_full_fe` | HGBR + LOO + biais rater + PK | 4.42 ± 0.05 |
+| `02_improved_hgbr` | HGBR + no-LOO + catégorielles + trend + on_off_ratio | 4.276 ± 0.051 |
+| `03_lgbm_smooth` | LightGBM + smooth w=3 | 4.154 |
+| `04_lgbm_tuned_bonus` | LightGBM tuné + ledd_velocity + smooth w=5 | **4.145** |
+| Dummy (prédire la moyenne) | — | 16.50 |
 
 ---
 
@@ -158,9 +173,12 @@ Un seul `HistGradientBoostingRegressor` (HGBR) :
 ## Décisions prises et rationale
 
 1. **GroupKFold obligatoire** — données longitudinales, ~8 visites/patient, patients test ≠ patients train.
-2. **Pas d'imputation médiane** — missingness non aléatoire (MNAR). NaN HGBR natif.
-3. **HGBR unique (pas de stacking)** — suffisant pour ce premier modèle ; complexité non justifiée.
-4. **Biais rater via ratio médian** — plus robuste que target encoding car capte le biais multiplicatif.
-5. **Correction pharmacocinétique de `on`** — estimée empiriquement, pas de modèle PK imposé.
-6. **`rater_id` représenté par `b_r`** — la feature numérique b_r est meilleure que l'identifiant catégoriel.
-7. **Agrégats patient calculés dans chaque fold** — anti-fuite stricte.
+2. **Pas d'imputation médiane** — missingness non aléatoire (MNAR). NaN HGBR/LightGBM natif.
+3. **Biais rater via ratio médian** — plus robuste que target encoding car capte le biais multiplicatif.
+4. **Correction pharmacocinétique de `on`** — estimée empiriquement, pas de modèle PK imposé.
+5. **`rater_id` catégoriel + `rater_bias_feature` float** — les deux apportent des signaux complémentaires.
+6. **Agrégats patient sans LOO** — cohérent avec le test (toutes visites disponibles) ; signal plus stable.
+7. **`on_off_mean` retiré** — biais intra-visite : OFF et ON sont biaisés dans le même sens le même jour.
+8. **Lissage post-hoc (Savitzky-Golay w=5)** — réduit le bruit de prédiction visite-à-visite sans toucher le modèle.
+9. **Folds fixés (`data/cv_folds.pkl`)** — comparabilité stricte entre toutes les expériences.
+10. **Pas de target encoding patient** — les patients test sont inconnus → inapplicable.

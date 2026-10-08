@@ -3,7 +3,8 @@
 Three tiers of features:
 
 1. **Stateless** — computed from a single row without any fold information:
-   ``disease_duration``, missingness flags, categorical encoding.
+   ``disease_duration``, missingness flags, categorical encoding (including
+   native ``category`` dtype columns for HGBR/LightGBM).
    These are safe to apply before any CV split.
 
 2. **Rater-bias correction** (fold-aware) — each rater applies a
@@ -12,12 +13,12 @@ Three tiers of features:
    applied to both train and validation folds.  On the test set the full
    training set is used for estimation.
 
-3. **Patient LOO aggregates** (intra-split, leave-one-out) — for each
-   row, the mean/std/slope of the *other* visits of the same patient
-   within the same split.  This is leak-free because only features X
-   are used (no target).  GroupKFold puts all visits of a patient in
-   one fold so there is no cross-fold patient overlap; intra-split LOO
-   is the only way to get per-patient context on cold-start patients.
+3. **Patient aggregates** (intra-split, full-patient) — for each row,
+   slope/intercept/mean/std computed over *all* visits of the same patient
+   within the same split.  No leave-one-out: on the test set all visits of
+   a patient are available, so using all visits is consistent and gives a
+   more stable estimate.  GroupKFold guarantees no cross-fold patient
+   overlap, so this is still leak-free.
 
 Public API
 ----------
@@ -64,21 +65,12 @@ _GLOBAL_OFF_RATIO = 0.85
 # Stateless helpers
 # ---------------------------------------------------------------------------
 
-def _encode_gene(series: pd.Series) -> pd.Series:
-    """Ordinal-encode ``gene``, mapping NaN to the 'Unknown' sentinel."""
-    filled = series.fillna("Unknown")
-    mapping = {cat: i for i, cat in enumerate(GENE_CATEGORIES)}
-    return filled.map(mapping).astype("float64")
-
-
-def _encode_cohort(series: pd.Series) -> pd.Series:
-    """Ordinal-encode ``cohort`` (A → 0, B → 1)."""
-    mapping = {cat: i for i, cat in enumerate(COHORT_CATEGORIES)}
-    return series.map(mapping).astype("float64")
-
-
 def _stateless_features(X: pd.DataFrame) -> pd.DataFrame:
     """Compute features that do not require fold-level target information.
+
+    Includes disease duration, missingness flags, and categorical columns
+    (using native ``category`` dtype so HGBR/LightGBM can find optimal
+    splits without forcing an arbitrary ordinal order).
 
     Parameters
     ----------
@@ -95,7 +87,6 @@ def _stateless_features(X: pd.DataFrame) -> pd.DataFrame:
 
     # --- disease duration -----------------------------------------------
     age_diag = df["age_at_diagnosis"].copy()
-    # Fill the ~5 % missing with the global median before subtraction only
     age_diag_filled = age_diag.fillna(age_diag.median())
     df["disease_duration"] = (df["age"] - age_diag_filled).clip(lower=0)
 
@@ -105,10 +96,16 @@ def _stateless_features(X: pd.DataFrame) -> pd.DataFrame:
     df["off_missing_flag"] = df["off"].isna().astype("float64")
     df["time_on_missing_flag"] = df["time_since_intake_on"].isna().astype("float64")
 
-    # --- categorical encoding --------------------------------------------
-    df["gene_enc"] = _encode_gene(df["gene"])
-    df["cohort_enc"] = _encode_cohort(df["cohort"])
-    # sexM is already 0/1 integer — keep as float for HGBR
+    # --- native categorical columns (HGBR / LightGBM native support) ------
+    # gene: fill NaN with "Unknown" sentinel then cast to category
+    df["gene_cat"] = df["gene"].fillna("Unknown").astype("category")
+    # cohort: already clean (no NaN)
+    df["cohort_cat"] = df["cohort"].astype("category")
+    # rater_id: high cardinality (50 raters) — category lets the model
+    # find optimal partitions; complements the numeric rater_bias_feature
+    df["rater_id_cat"] = df["rater_id"].astype("category")
+
+    # --- legacy numeric encodings (kept for backward compat + HGBR bins) --
     df["sexM"] = df["sexM"].astype("float64")
 
     return df
@@ -173,7 +170,6 @@ def _apply_rater_correction(
         ``rater_bias_feature`` columns added.
     """
     b = df["rater_id"].map(rater_bias).fillna(_GLOBAL_OFF_RATIO)
-    # Guard against zero/near-zero divisors
     b = b.clip(lower=0.1)
     df = df.copy()
     df["rater_bias_feature"] = b
@@ -223,7 +219,6 @@ def _estimate_pk_curve(
     t = X_train.loc[mask, "time_since_intake_on"].values
     ratios = (X_train.loc[mask, on_col] / y_train.loc[mask]).values
 
-    # Bin edges: 0, 0.5, 1.0, ..., 6.0
     edges = np.arange(0, _T_MAX + _T_BIN_WIDTH, _T_BIN_WIDTH)
     bin_centers = edges[:-1] + _T_BIN_WIDTH / 2
 
@@ -239,7 +234,6 @@ def _estimate_pk_curve(
     if len(valid_centers) < 3:
         return None
 
-    # Clamp extreme values before fitting
     bin_medians_arr = np.clip(bin_medians, _T_CLAMP_MIN, _T_CLAMP_MAX)
 
     with warnings.catch_warnings():
@@ -291,72 +285,56 @@ def _apply_pk_correction(
 
 
 # ---------------------------------------------------------------------------
-# Patient LOO (leave-one-out) intra-split aggregates
+# Patient full-group aggregates (no leave-one-out)
 # ---------------------------------------------------------------------------
 
-def _loo_mean(df: pd.DataFrame, col: str) -> pd.Series:
-    """Leave-one-out mean: for each row, mean of *other* visits of same patient.
+def _group_mean(df: pd.DataFrame, col: str) -> pd.Series:
+    """Per-patient mean of ``col`` over all visits (including current row).
 
-    Uses only feature values (no target), so this is leak-free even when
-    applied within the validation fold.  GroupKFold ensures all visits of
-    a patient land in the same fold, so each patient's LOO context comes
-    exclusively from their own visits in the same split.
+    Using all visits (no LOO) is consistent with the test-set regime where
+    all visits of a patient are available at prediction time.
 
     Parameters
     ----------
     df :
-        DataFrame with ``patient_id`` and the target column ``col``.
-    col :
-        Name of the column to aggregate (e.g. ``off_corrected``).
-
-    Returns
-    -------
-    pd.Series
-        LOO mean values aligned with ``df.index``.  NaN when a patient has
-        only one non-NaN observation (nothing left to average after LOO).
-    """
-    notna_mask = df[col].notna().astype(float)
-    filled = df[col].fillna(0.0)
-
-    pid = df["patient_id"]
-    group_sum = pid.map(df.groupby("patient_id")[col].sum())
-    group_count = pid.map(df.groupby("patient_id")[col].count())
-
-    loo_sum = group_sum - filled * notna_mask
-    loo_count = group_count - notna_mask
-
-    result = np.where(loo_count > 0, loo_sum / loo_count, np.nan)
-    return pd.Series(result, index=df.index)
-
-
-def _loo_std(df: pd.DataFrame, col: str) -> pd.Series:
-    """Leave-one-out std: std of *other* visits of same patient.
-
-    Approximates using the full-patient std when the group has 3+ members.
-
-    Parameters
-    ----------
-    df :
-        DataFrame with ``patient_id`` and the target column ``col``.
+        DataFrame with ``patient_id`` and ``col``.
     col :
         Column to aggregate.
 
     Returns
     -------
     pd.Series
-        LOO std approximation aligned with ``df.index``.
+        Group mean values aligned with ``df.index``.
     """
-    pid = df["patient_id"]
-    group_std = pid.map(df.groupby("patient_id")[col].std().fillna(0.0))
-    group_count = pid.map(df.groupby("patient_id")[col].count())
-    result = np.where(group_count >= 3, group_std, 0.0)
-    return pd.Series(result, index=df.index)
+    return df["patient_id"].map(df.groupby("patient_id")[col].mean())
+
+
+def _group_std(df: pd.DataFrame, col: str) -> pd.Series:
+    """Per-patient std of ``col`` over all visits (including current row).
+
+    Parameters
+    ----------
+    df :
+        DataFrame with ``patient_id`` and ``col``.
+    col :
+        Column to aggregate.
+
+    Returns
+    -------
+    pd.Series
+        Group std values aligned with ``df.index``.  NaN when patient has < 2
+        non-NaN observations; filled with 0 for single-visit patients.
+    """
+    result = df["patient_id"].map(df.groupby("patient_id")[col].std().fillna(0.0))
+    return result
 
 
 def _patient_slope_intercept(
     df: pd.DataFrame, col: str
 ) -> tuple[pd.Series, pd.Series]:
     """Per-patient linear regression slope and intercept of ``col`` vs ``age``.
+
+    Uses all visits of the patient (no LOO).
 
     Parameters
     ----------
@@ -369,14 +347,15 @@ def _patient_slope_intercept(
     -------
     tuple[pd.Series, pd.Series]
         ``(patient_slope, patient_intercept)`` aligned with ``df.index``.
-        NaN-patients fall back to the global median slope/intercept.
+        Patients with fewer than 2 valid rows fall back to the global
+        median slope/intercept.
     """
     slopes: dict[str, float] = {}
     intercepts: dict[str, float] = {}
 
     for pid, grp in df.groupby("patient_id"):
         valid = grp[[col, "age"]].dropna()
-        if len(valid) >= 3:
+        if len(valid) >= 2:
             coeffs = np.polyfit(valid["age"].values, valid[col].values, 1)
             slopes[pid] = float(coeffs[0])
             intercepts[pid] = float(coeffs[1])
@@ -396,12 +375,40 @@ def _patient_slope_intercept(
     return slope_series, intercept_series
 
 
-def _add_patient_loo_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Add LOO intra-split patient aggregate features to ``df``.
+def _ledd_velocity(df: pd.DataFrame) -> pd.Series:
+    """Per-patient LEDD velocity: slope of ledd vs age for each visit.
+
+    For patients with >= 2 non-NaN LEDD values, fits a linear regression
+    ``ledd ~ age`` and returns the slope (dose increase rate, mg/year).
+    Patients with < 2 valid LEDD rows get NaN — HGBR/LightGBM handle it.
+
+    Parameters
+    ----------
+    df :
+        DataFrame with ``patient_id``, ``age``, ``ledd``.
+
+    Returns
+    -------
+    pd.Series
+        LEDD velocity (slope) aligned with ``df.index``.
+    """
+    vel: dict[str, float] = {}
+    for pid, grp in df.groupby("patient_id"):
+        valid = grp[["ledd", "age"]].dropna()
+        if len(valid) >= 2:
+            coeffs = np.polyfit(valid["age"].values, valid["ledd"].values, 1)
+            vel[pid] = float(coeffs[0])
+        else:
+            vel[pid] = np.nan
+    return df["patient_id"].map(vel)
+
+
+def _add_patient_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Add per-patient aggregate features to ``df``.
 
     All aggregates use only feature columns (no target), so they are
-    leak-free.  For each row the aggregates summarise the *other* visits
-    of the same patient within the same DataFrame.
+    leak-free.  For each row the aggregates summarise *all* visits of the
+    same patient within the same DataFrame (no LOO exclusion).
 
     Parameters
     ----------
@@ -417,15 +424,17 @@ def _add_patient_loo_features(df: pd.DataFrame) -> pd.DataFrame:
         ``patient_n_visits`` added.
     """
     df = df.copy()
-    df["patient_off_mean"] = _loo_mean(df, "off_corrected")
-    df["patient_off_std"] = _loo_std(df, "off_corrected")
-    df["patient_on_mean"] = _loo_mean(df, "on_corrected")
+    df["patient_off_mean"] = _group_mean(df, "off_corrected")
+    df["patient_off_std"] = _group_std(df, "off_corrected")
+    df["patient_on_mean"] = _group_mean(df, "on_corrected")
     df["patient_slope"], df["patient_intercept"] = _patient_slope_intercept(
         df, "off_corrected"
     )
     df["patient_n_visits"] = df["patient_id"].map(
         df.groupby("patient_id")["age"].count().astype(float)
     )
+    # LEDD velocity: rate of dose increase per year of age
+    df["ledd_velocity"] = _ledd_velocity(df)
     return df
 
 
@@ -448,6 +457,14 @@ def _visit_index(df: pd.DataFrame) -> pd.Series:
 def _derived_features(df: pd.DataFrame) -> pd.DataFrame:
     """Compute interaction features from corrected ``on`` and ``off``.
 
+    ``on_off_mean`` is intentionally omitted: if ``off`` is biased low at a
+    visit, ``on`` is also biased low (same patient, same day, same conditions).
+    Averaging them does not reduce this intra-visit bias.
+
+    ``on_off_ratio = off_corrected / on_corrected`` captures motor fluctuation
+    independently of the absolute score level: a systematic under-rating by
+    the evaluator leaves the ratio unchanged.
+
     Parameters
     ----------
     df :
@@ -456,11 +473,58 @@ def _derived_features(df: pd.DataFrame) -> pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        DataFrame with ``on_off_diff`` and ``on_off_mean`` added.
+        DataFrame with ``on_off_diff``, ``on_off_ratio``,
+        ``patient_trend_at_age``, ``off_residual_from_trend``, and
+        ``visit_rel_index`` added.
     """
     df = df.copy()
     df["on_off_diff"] = df["off_corrected"] - df["on_corrected"]
-    df["on_off_mean"] = (df["off_corrected"] + df["on_corrected"]) / 2
+
+    # Ratio: guard against near-zero on_corrected
+    on_safe = df["on_corrected"].replace(0, np.nan)
+    df["on_off_ratio"] = df["off_corrected"] / on_safe
+
+    return df
+
+
+def _trend_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Add personalised trend features using the per-patient linear model.
+
+    These features require ``patient_slope``, ``patient_intercept``, and
+    ``patient_n_visits`` to already be present in ``df``.
+
+    Parameters
+    ----------
+    df :
+        DataFrame after ``_add_patient_features``.
+
+    Returns
+    -------
+    pd.DataFrame
+        ``df`` with:
+        - ``patient_trend_at_age``: predicted score from the patient's own
+          linear trend at the current visit age — a personalised prior.
+        - ``off_residual_from_trend``: how far ``off_corrected`` deviates
+          from that trend — captures intra-patient fluctuation beyond
+          normal progression.
+        - ``visit_rel_index``: visit position normalised by total visits
+          (0 = first visit, 1 = last); more informative than raw rank.
+    """
+    df = df.copy()
+
+    # Personalised linear forecast at this visit's age
+    df["patient_trend_at_age"] = (
+        df["patient_intercept"] + df["patient_slope"] * df["age"]
+    )
+
+    # Residual: how far the measured off_corrected is from the trend
+    off_safe = df["off_corrected"]  # NaN where off is missing — kept as NaN
+    df["off_residual_from_trend"] = off_safe - df["patient_trend_at_age"]
+
+    # Normalised visit position within the patient's sequence
+    n = df["patient_n_visits"].replace(0, 1)  # guard division by zero
+    df["visit_rel_index"] = df["visit_index"] / n
+
     return df
 
 
@@ -469,7 +533,7 @@ def _derived_features(df: pd.DataFrame) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 FEATURE_COLS: list[str] = [
-    # Raw numeric features (NaN handled natively by HGBR)
+    # Raw numeric features (NaN handled natively by HGBR / LightGBM)
     "age",
     "disease_duration",
     "ledd",
@@ -479,8 +543,8 @@ FEATURE_COLS: list[str] = [
     "on_time_corrected",
     # Interaction features
     "on_off_diff",
-    "on_off_mean",
-    # Patient-level longitudinal aggregates
+    "on_off_ratio",
+    # Patient-level longitudinal aggregates (full-group, no LOO)
     "patient_off_mean",
     "patient_off_std",
     "patient_on_mean",
@@ -488,14 +552,21 @@ FEATURE_COLS: list[str] = [
     "patient_intercept",
     "patient_n_visits",
     "visit_index",
-    # Time since intake (kept raw; HGBR will use it)
+    "visit_rel_index",
+    "ledd_velocity",
+    # Personalised trend features
+    "patient_trend_at_age",
+    "off_residual_from_trend",
+    # Time since intake (kept raw; model uses it)
     "time_since_intake_on",
     "time_since_intake_off",
     # Rater bias factor (numeric representation of rater identity)
     "rater_bias_feature",
-    # Encoded categoricals
-    "gene_enc",
-    "cohort_enc",
+    # Native categorical columns (HGBR / LightGBM find optimal splits)
+    "gene_cat",
+    "cohort_cat",
+    "rater_id_cat",
+    # Sex (binary)
     "sexM",
     # Missingness flags (informative MNAR signal)
     "ledd_missing_flag",
@@ -520,6 +591,11 @@ def build_features(
     are learned exclusively from ``X_train`` / ``y_train`` and applied to
     both ``X_train`` and ``X_val``.  This guarantees no target leakage from
     the validation fold into the training computation.
+
+    Patient aggregates (slope, mean, std) are computed over *all* visits of
+    each patient within the respective split — no leave-one-out.  This is
+    consistent with the test-set regime (all visits available) and gives a
+    more stable per-patient signal.
 
     Parameters
     ----------
@@ -561,19 +637,30 @@ def build_features(
     if X_v is not None:
         X_v = _derived_features(X_v)
 
-    # ---- Step 5: patient LOO aggregates (intra-split, leak-free) --------
-    # Computed independently per split using only feature columns (no target).
-    X_tr = _add_patient_loo_features(X_tr)
+    # ---- Step 5: patient full-group aggregates (no LOO) -----------------
+    # Each split computed independently using only feature columns (no target).
+    X_tr = _add_patient_features(X_tr)
     if X_v is not None:
-        X_v = _add_patient_loo_features(X_v)
+        X_v = _add_patient_features(X_v)
 
-    # ---- Step 6: visit index (can be done post-merge) -------------------
+    # ---- Step 6: visit index and relative position ----------------------
     X_tr["visit_index"] = _visit_index(X_tr)
     if X_v is not None:
-        # For the validation/test set: rank within patient from their own rows
         X_v["visit_index"] = _visit_index(X_v)
 
-    # ---- Step 7: select final feature columns ---------------------------
+    # ---- Step 7: personalised trend features (requires slope/intercept) -
+    X_tr = _trend_features(X_tr)
+    if X_v is not None:
+        X_v = _trend_features(X_v)
+
+    # ---- Step 8: align categorical dtypes across train / val ------------
+    # Category columns must share the same dtype object (same categories)
+    # so the model sees consistent integer codes.
+    if X_v is not None:
+        for col in ("gene_cat", "cohort_cat", "rater_id_cat"):
+            X_v[col] = X_v[col].astype(X_tr[col].dtype)
+
+    # ---- Step 9: select final feature columns ---------------------------
     X_tr_fe = X_tr[FEATURE_COLS].copy()
     X_v_fe = X_v[FEATURE_COLS].copy() if X_v is not None else None
 
