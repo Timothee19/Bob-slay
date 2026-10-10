@@ -144,14 +144,18 @@ temporelle de chaque patient après prédiction → réduction du bruit intra-pa
 
 ## Repères RMSE (résultats réels GroupKFold)
 
-| Expérience | Configuration | RMSE (best post-proc) |
-|---|---|---|
-| `01_hgbr_full_fe` | HGBR + LOO + biais rater + PK | 4.42 |
-| `02_improved_hgbr` | HGBR + no-LOO + catégorielles + trend + on_off_ratio | 4.276 |
-| `03_lgbm_smooth` | LightGBM + smooth w=3 | 4.154 |
-| `04_lgbm_tuned_bonus` | LightGBM tuné + ledd_velocity + smooth w=5 | 4.145 |
-| `05_lgbm_lag_features` | LightGBM + lags + upper-tail agg + poly2 smooth | **3.739** |
-| Dummy (prédire la moyenne) | — | 16.50 |
+| Expérience | Configuration | RMSE brut | RMSE poly2 | Skore |
+|---|---|---|---|---|
+| `01_hgbr_full_fe` | HGBR + LOO + biais rater + PK | 4.42 | — | — |
+| `02_improved_hgbr` | HGBR + no-LOO + catégorielles + trend + on_off_ratio | 4.27 | 4.276 | [lien](https://skore.probabl.ai/bob-slay/bobathon-esilv/cross-validations/51062) |
+| `03_lgbm_smooth` | LightGBM + smooth w=3 | 4.27 | 4.154 | [lien](https://skore.probabl.ai/bob-slay/bobathon-esilv/cross-validations/51089) |
+| `04_lgbm_tuned_bonus` | LightGBM tuné + ledd_velocity + smooth w=5 | 4.25 | 4.145 | [lien](https://skore.probabl.ai/bob-slay/bobathon-esilv/cross-validations/51153) |
+| `05_lgbm_lag_features` | LightGBM + lags + upper-tail agg + poly2 smooth | 3.939 | **3.739** | [lien](https://skore.probabl.ai/bob-slay/bobathon-esilv/cross-validations/51301) |
+| `06_lgbm_enriched_features` | LightGBM 2000/0.01 + 15 nouvelles features (lags×2, ON agg, LEDD/OFF, IQR, cummin) | 3.706 | **3.532** | [lien](https://skore.probabl.ai/bob-slay/bobathon-esilv/cross-validations/60136) |
+| `07_lgbm_enriched_v2` | LightGBM 2000/0.01 + 12 features supplémentaires (quadratic slope, rater target stats, LEDD agg, off_accel) + subsample=0.85 + isotonic post-proc | 3.633 | **3.490** (poly2+isotonic) | [lien](https://skore.probabl.ai/bob-slay/bobathon-esilv/cross-validations/60148) |
+| `08_ensemble_enriched` | Ensemble 2×LightGBM (3000 arbres, lr=0.008) + 10 features (gene/cohort agg, obs_time, visit_density, dd_ledd interactions, off_running_std) | 3.589 | **3.456** (poly2+isotonic) | [lien](https://skore.probabl.ai/bob-slay/bobathon-esilv/cross-validations/60198) |
+| `09_ensemble3_xgb` | Ensemble 3 modèles (2×LightGBM + XGBoost) + 7 features (off_ewma, on_ewma, patient_pk_ratio, off_vs_gene/cohort_mean, visit_rev_index, ledd_ewma) — 80 features total | en cours | TBD | en cours |
+| Dummy (prédire la moyenne) | — | 16.50 | — | — |
 
 ---
 
@@ -185,3 +189,7 @@ temporelle de chaque patient après prédiction → réduction du bruit intra-pa
 10. **Pas de target encoding patient** — les patients test sont inconnus → inapplicable.
 11. **Lags `off_cummax` / `off_prev` / `off_next`** — exploitent la structure longitudinale dans le fold. `off_cummax` (corr=0.95 avec target) est la feature la plus puissante du projet ; `off_prev` aide particulièrement les visites sans OFF courant (RMSE -0.87 dans ce sous-groupe).
 12. **`patient_off_max` / `patient_off_q75`** — upper-tail de off_corrected par patient ; moins biaisé que la moyenne sur les mesures sous-estimées.
+13. **Exp 06 — Enrichissement feature (2025-01-07)** : 15 nouvelles features ajoutées dans `add_extra_features()` dans l'expérience elle-même. Gain de -0.207 RMSE poly2 (3.739 → 3.532). Nouvelles features : `off_corrected_prev2`, `on_corrected_prev2`, `off_lag_delta`, `inter_visit_gap`, `off_lag_delta_per_year`, `off_corrected_next2`, `patient_on_max`, `patient_on_q75`, `patient_on_std`, `patient_on_slope`, `ledd_off_ratio`, `ledd_per_off_trend`, `patient_off_iqr`, `off_cummin`, `on_time_corrected_prev`. LightGBM plus profond (2000 arbres, lr=0.01). Top features : `rater_id_cat`, `ledd_velocity`, `patient_on_slope`, `patient_off_max`, `patient_off_std`, `patient_on_max`.
+14. **Exp 07 — Features v2 + isotonic post-proc (2025-01-07)** : 12 nouvelles features : `patient_slope2` (terme quadratique de la progression), `off_residual_prev`, `on_time_corrected_next`, `ledd_prev/next`, `off_lag_accel`, `patient_ledd_mean/max`, `ledd_zscore`, `rater_target_mean/std/count`. Subsampling LightGBM (subsample=0.85, colsample_bytree=0.85). Nouveau post-processing **isotonic** (PAVA monotone non-décroissant par patient) — seul il est pire que poly2 (RMSE 3.60), mais **poly2 puis isotonic = 3.490** (-0.042 vs exp06). Soumission : `07_lgbm_enrichedv2_poly2+isotonic.csv`.
+15. **Exp 08 — Ensemble 2×LightGBM + gene/cohort agg (2025-01-07)** : Ensemble de 2 modèles LightGBM (3000 arbres, lr=0.008, seeds différents, num_leaves différents) pour réduire la variance. 10 nouvelles features : `gene_off_mean`, `gene_slope_mean`, `cohort_off_mean/std`, `cohort_slope_mean`, `patient_observation_time`, `visits_per_year`, `dd_ledd_interaction`, `dd_ledd_velocity`, `off_running_std`. Total : 73 features. RMSE poly2+isotonic = **3.456** (-0.034 vs exp07). Soumissions : `08_ensemble_enriched_poly2.csv` (3.459) et `08_ensemble_enriched_poly2iso.csv` (3.456). Top nouvelles features : `off_running_std`, `visits_per_year`, `patient_observation_time`.
+16. **Exp 09 — Ensemble 3 modèles (LightGBM×2 + XGBoost) + features EWMA (2025-01-07)** : Ajout de XGBoost (3000 arbres, max_depth=6, tree_method=hist) comme 3ème modèle. 7 nouvelles features : `off_ewma`, `on_ewma` (moyennes exponentielles avec shift -1), `patient_pk_ratio` (biais PK par patient), `off_vs_gene_mean`, `off_vs_cohort_mean` (résidus relatifs au groupe), `visit_rev_index`, `ledd_ewma`. Total : 80 features. Soumissions : `09_ensemble3_poly2iso.csv` (meilleure), `09_ensemble3_poly2.csv`. Skore : en cours de push.
