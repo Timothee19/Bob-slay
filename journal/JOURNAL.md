@@ -12,8 +12,8 @@ stem).
 
 - **Project / dataset:** Parkinson's UPDRS regression (train 44 590 rows × 13 features)
 - **Goal:** Predict the continuous UPDRS score (`target`) for Parkinson's patients, minimising RMSE on held-out data.
-- **Last experiment:** 04_lgbm_tuned_bonus — 2025-01-07
-- **Last result:** GroupKFold RMSE 4.145 (smoothed w=5) / 4.252 raw (dummy 16.50); published → https://skore.probabl.ai/bob-slay/bobathon-esilv/cross-validations/51153
+- **Last experiment:** 05_lgbm_lag_features — 2025-01-07
+- **Last result:** GroupKFold RMSE **3.739** (poly2 smoothed) / 3.939 raw (dummy 16.50); published → https://skore.probabl.ai/bob-slay/bobathon-esilv/cross-validations/51301
 
 - **Workspace decisions** (immutable unless the user pivots):
   - tabular library: pandas - recorded: 2025-01-07
@@ -51,6 +51,7 @@ Status values: planned | approved | running | done | abandoned.
 | `02_improved_hgbr` | HGBR: no-LOO + catégorielles natives + trend features + on_off_ratio | done | RMSE 4.276 ± 0.051 (-0.14 vs baseline) | improvement-plan.md |
 | `03_lgbm_smooth` | LightGBM + lissage Savitzky-Golay post-hoc w=3 | done | RMSE 4.154 smooth / 4.266 raw (-0.27 vs baseline) | improvement-plan.md |
 | `04_lgbm_tuned_bonus` | LightGBM tuné (lr=0.02, leaves=127) + ledd_velocity + smooth w=5 | done | RMSE 4.145 smooth / 4.252 raw (-0.28 vs baseline) | improvement-plan.md |
+| `05_lgbm_lag_features` | LightGBM + lags (off_prev/next/cummax) + patient_off_max/q75 + poly2 smoothing | done | RMSE **3.739** poly2 / 3.939 raw (-0.68 vs baseline) | improvement-plan.md |
 
 ## Backlog
 

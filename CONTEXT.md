@@ -144,12 +144,13 @@ temporelle de chaque patient après prédiction → réduction du bruit intra-pa
 
 ## Repères RMSE (résultats réels GroupKFold)
 
-| Expérience | Configuration | RMSE |
+| Expérience | Configuration | RMSE (best post-proc) |
 |---|---|---|
-| `01_hgbr_full_fe` | HGBR + LOO + biais rater + PK | 4.42 ± 0.05 |
-| `02_improved_hgbr` | HGBR + no-LOO + catégorielles + trend + on_off_ratio | 4.276 ± 0.051 |
+| `01_hgbr_full_fe` | HGBR + LOO + biais rater + PK | 4.42 |
+| `02_improved_hgbr` | HGBR + no-LOO + catégorielles + trend + on_off_ratio | 4.276 |
 | `03_lgbm_smooth` | LightGBM + smooth w=3 | 4.154 |
-| `04_lgbm_tuned_bonus` | LightGBM tuné + ledd_velocity + smooth w=5 | **4.145** |
+| `04_lgbm_tuned_bonus` | LightGBM tuné + ledd_velocity + smooth w=5 | 4.145 |
+| `05_lgbm_lag_features` | LightGBM + lags + upper-tail agg + poly2 smooth | **3.739** |
 | Dummy (prédire la moyenne) | — | 16.50 |
 
 ---
@@ -179,6 +180,8 @@ temporelle de chaque patient après prédiction → réduction du bruit intra-pa
 5. **`rater_id` catégoriel + `rater_bias_feature` float** — les deux apportent des signaux complémentaires.
 6. **Agrégats patient sans LOO** — cohérent avec le test (toutes visites disponibles) ; signal plus stable.
 7. **`on_off_mean` retiré** — biais intra-visite : OFF et ON sont biaisés dans le même sens le même jour.
-8. **Lissage post-hoc (Savitzky-Golay w=5)** — réduit le bruit de prédiction visite-à-visite sans toucher le modèle.
+8. **Lissage post-hoc poly2 sur l'âge** — ajuste une parabole `pred ~ age` par patient. Respecte l'irrégularité des visites (SG traite chaque visite comme équidistante). Gain : -0.20 RMSE vs SG.
 9. **Folds fixés (`data/cv_folds.pkl`)** — comparabilité stricte entre toutes les expériences.
 10. **Pas de target encoding patient** — les patients test sont inconnus → inapplicable.
+11. **Lags `off_cummax` / `off_prev` / `off_next`** — exploitent la structure longitudinale dans le fold. `off_cummax` (corr=0.95 avec target) est la feature la plus puissante du projet ; `off_prev` aide particulièrement les visites sans OFF courant (RMSE -0.87 dans ce sous-groupe).
+12. **`patient_off_max` / `patient_off_q75`** — upper-tail de off_corrected par patient ; moins biaisé que la moyenne sur les mesures sous-estimées.
