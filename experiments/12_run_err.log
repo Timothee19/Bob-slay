@@ -1,0 +1,68 @@
+Traceback (most recent call last):
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\project\project.py", line 292, in put
+    payload_dict = payload.model_dump()
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\pydantic\main.py", line 475, in model_dump
+    return self.__pydantic_serializer__.to_python(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<13 lines>...
+        polymorphic_serialization=polymorphic_serialization,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+pydantic_core._pydantic_core.PydanticSerializationError: Error calling function `serialize_model`: NotFittedError: This Pipeline instance is not fitted yet. Call 'fit' with appropriate arguments before using this estimator.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\timba\HackatonML\bobathon-esilv\experiments\12_ensemble_RSearchSkrub.py", line 442, in <module>
+    project.put("12_skrub_halvingsearch", report)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_project\project.py", line 309, in put
+    return self.__project.put(key=key, report=report)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\project\project.py", line 279, in put
+    Progress(
+    ~~~~~~~~^
+        SpinnerColumn(),
+        ^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        auto_refresh=THREADABLE,
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+    ) as progress,
+    ^
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\rich\progress.py", line 1190, in __exit__
+    self.stop()
+    ~~~~~~~~~^^
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\rich\progress.py", line 1176, in stop
+    self.live.stop()
+    ~~~~~~~~~~~~~~^^
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\rich\live.py", line 162, in stop
+    with self.console:
+         ^^^^^^^^^^^^
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\rich\console.py", line 864, in __exit__
+    self._exit_buffer()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\rich\console.py", line 820, in _exit_buffer
+    self._check_buffer()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\rich\console.py", line 2055, in _check_buffer
+    self._write_buffer()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\rich\console.py", line 2091, in _write_buffer
+    legacy_windows_render(buffer, LegacyWindowsTerm(self.file))
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\rich\_windows_renderer.py", line 17, in legacy_windows_render
+    term.write_styled(text, style)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\rich\_win32_console.py", line 441, in write_styled
+    self.write_text(text)
+    ~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\rich\_win32_console.py", line 402, in write_text
+    self.write(text)
+    ~~~~~~~~~~^^^^^^
+  File "C:\Users\timba\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2839' in position 0: character maps to <undefined>

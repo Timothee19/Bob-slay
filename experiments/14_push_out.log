@@ -1,0 +1,12 @@
+Auto-drop 5 cols: ['patient_intercept', 'cohort_off_std_feat', 'cohort_slope_mean_feat', 'off_vs_gene_mean', 'off_vs_cohort_mean']
+Train after pruning: (44590, 76)
+Test after pruning:  (11013, 76)
+Fitting best model on full train...
+Done.
+Submission saved: submissions/14_skrub_drop_correlated.csv  (11013 rows)
+   Index     target
+0     66  18.218272
+1     67  23.842340
+2     68  25.704096
+3     69  29.496122
+4     70  30.263929

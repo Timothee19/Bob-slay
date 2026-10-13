@@ -1,0 +1,31 @@
++--------------------------------- Login to Skore Hub ---------------------------------+
+|                                                                                      |
+|                        Successfully logged in, using API key.                        |
+|                                                                                      |
++--------------------------------------------------------------------------------------+
+Train: (44590, 13)
+[CV] Loaded 5 folds from C:\Users\timba\HackatonML\bobathon-esilv\data\cv_folds.pkl
+Best model params set — max_iter=243, learning_rate=0.2509
+Search matrix: (44590, 81)
+
+Estimator SkrubHalvingBestModel          
+Aggregate                  mean       std
+Metric                                   
+RMSE                   3.800747  0.033846
+
+
+
+
+
+
+  Putting 12_skrub_halvingsearch 0:02:40
+Consult your report at 
+https://skore.probabl.ai/bob-slay/bobathon-esilv/cross-validations/61871
+Report saved: 12_skrub_halvingsearch
+Submission: 12_skrub_halvingsearch.csv  (11013 rows)
+   Index     target
+0     66  17.960139
+1     67  22.723510
+2     68  27.068242
+3     69  26.964112
+4     70  29.226189

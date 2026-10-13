@@ -1,0 +1,20 @@
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package __main__ seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package parkinsons seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package __main__ seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package parkinsons seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package __main__ seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package parkinsons seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package __main__ seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package parkinsons seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package __main__ seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package parkinsons seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()

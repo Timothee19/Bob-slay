@@ -1,0 +1,29 @@
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package __main__ seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package parkinsons seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package __main__ seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package parkinsons seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package __main__ seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package parkinsons seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package __main__ seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package parkinsons seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package __main__ seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package parkinsons seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+Traceback (most recent call last):
+  File "C:\Users\timba\HackatonML\bobathon-esilv\experiments\14_skrub_drop_correlated.py", line 587, in <module>
+    test_preds = best_model.predict(X_te_search)
+  File "C:\Users\timba\HackatonML\bobathon-esilv\experiments\14_skrub_drop_correlated.py", line 539, in predict
+    check_is_fitted(self, "pipeline_")
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\sklearn\utils\validation.py", line 1721, in check_is_fitted
+    raise NotFittedError(msg % {"name": type(estimator).__name__})
+sklearn.exceptions.NotFittedError: This SkrubHalvingBestModel instance is not fitted yet. Call 'fit' with appropriate arguments before using this estimator.
