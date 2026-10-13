@@ -5,18 +5,40 @@
 +--------------------------------------------------------------------------------------+
 [CV] Loaded 5 folds from C:\Users\timba\HackatonML\bobathon-esilv\data\cv_folds.pkl
 Train: (44590, 13)   Test: (11013, 13)
-Folds loaded: 5
+Folds: 5
 
 === Cross-validation (5 folds) ===
-  Fold 1: RMSE_raw=15.2230  RMSE_iso=14.5092
-  Fold 2: RMSE_raw=12.7980  RMSE_iso=10.3951
-  Fold 3: RMSE_raw=16.2851  RMSE_iso=13.2084
-  Fold 4: RMSE_raw=10.3059  RMSE_iso=8.8168
-  Fold 5: RMSE_raw=12.3815  RMSE_iso=10.5870
+Auto-drop 7 highly-correlated cols: ['patient_intercept', 'cohort_off_std_feat', 'cohort_slope_mean_feat', 'off_vs_gene_mean', 'off_vs_cohort_mean', 'off_affine_corrected', 'off_affine_delta']
+  Fold 1: RMSE_raw=3.5519  RMSE_pp=3.4329
+Auto-drop 6 highly-correlated cols: ['cohort_off_std_feat', 'cohort_slope_mean_feat', 'off_vs_gene_mean', 'off_vs_cohort_mean', 'off_affine_corrected', 'off_affine_delta']
+  Fold 2: RMSE_raw=3.5060  RMSE_pp=3.3777
+Auto-drop 7 highly-correlated cols: ['patient_intercept', 'cohort_off_std_feat', 'cohort_slope_mean_feat', 'off_vs_gene_mean', 'off_vs_cohort_mean', 'off_affine_corrected', 'off_affine_delta']
+  Fold 3: RMSE_raw=3.4936  RMSE_pp=3.3590
+Auto-drop 7 highly-correlated cols: ['patient_intercept', 'cohort_off_std_feat', 'cohort_slope_mean_feat', 'off_vs_gene_mean', 'off_vs_cohort_mean', 'off_affine_corrected', 'off_affine_delta']
+  Fold 4: RMSE_raw=3.5096  RMSE_pp=3.3876
+Auto-drop 7 highly-correlated cols: ['patient_intercept', 'cohort_off_std_feat', 'cohort_slope_mean_feat', 'off_vs_gene_mean', 'off_vs_cohort_mean', 'off_affine_corrected', 'off_affine_delta']
+  Fold 5: RMSE_raw=3.5288  RMSE_pp=3.4034
 
-Mean RMSE (raw)     : 13.3987
-Mean RMSE (isotonic): 11.5033
+Mean RMSE (raw)           : 3.5180
+Mean RMSE (poly2+isotonic): 3.3921
 
-Building skore evaluation graph …
+Building full-train feature set …
+Auto-drop 7 highly-correlated cols: ['patient_intercept', 'cohort_off_std_feat', 'cohort_slope_mean_feat', 'off_vs_gene_mean', 'off_vs_cohort_mean', 'off_affine_corrected', 'off_affine_delta']
 Running skore.evaluate …
 
+
+
+
+
+
+
+  Putting 17_affine_wls_trajectory_residual 0:03:28
+Consult your report at 
+https://skore.probabl.ai/bob-slay/bobathon-esilv/cross-validations/66137
+Skore report pushed: 17_affine_wls_trajectory_residual
+Estimator SkrubLearner          
+Aggregate         mean       std
+Metric                          
+RMSE          3.506542  0.029009
+
+Refitting on full training set …

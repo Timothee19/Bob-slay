@@ -1,0 +1,46 @@
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package __main__ seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package parkinsons seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package __main__ seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package parkinsons seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package __main__ seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package parkinsons seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package __main__ seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package parkinsons seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+WARNING:skore._plugins.hub.client.client:Request failed to reach server. Trying again in 0.25 seconds.
+WARNING:skore._plugins.hub.client.client:Request failed to reach server. Trying again in 0.5 seconds.
+WARNING:skore._plugins.hub.client.client:Request failed to reach server. Trying again in 1.0 seconds.
+WARNING:skore._plugins.hub.client.client:Request failed to reach server. Trying again in 2.0 seconds.
+WARNING:skore._plugins.hub.client.client:Request failed to reach server. Trying again in 4.0 seconds.
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package __main__ seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\skore\_plugins\hub\artifact\environment.py:48: UserWarning: Package parkinsons seems to be an editable or local install (loaded from outside site-packages). It will not be recorded in the inferred requirements.
+  for requirement in infer()
+Traceback (most recent call last):
+  File "C:\Users\timba\HackatonML\bobathon-esilv\experiments\17_affine_wls_trajectory_residual.py", line 806, in <module>
+    X_te_ext, _ = add_extra_features_v4(X_te_fe, X_test_raw, saved_stats=stats_full)
+                  ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timba\HackatonML\bobathon-esilv\experiments\17_affine_wls_trajectory_residual.py", line 130, in add_extra_features_v4
+    df["patient_id"] = X_raw["patient_id"].values
+    ~~^^^^^^^^^^^^^^
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\pandas\core\frame.py", line 4672, in __setitem__
+    self._set_item(key, value)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\pandas\core\frame.py", line 4874, in _set_item
+    value, refs = self._sanitize_column(value)
+                  ~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\pandas\core\frame.py", line 5756, in _sanitize_column
+    com.require_length_match(value, self.index)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timba\HackatonML\bobathon-esilv\.venv\Lib\site-packages\pandas\core\common.py", line 601, in require_length_match
+    raise ValueError(
+    ...<4 lines>...
+    )
+ValueError: Length of values (11013) does not match length of index (44590)
