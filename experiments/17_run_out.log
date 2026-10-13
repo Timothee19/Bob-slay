@@ -1,0 +1,22 @@
++--------------------------------- Login to Skore Hub ---------------------------------+
+|                                                                                      |
+|                        Successfully logged in, using API key.                        |
+|                                                                                      |
++--------------------------------------------------------------------------------------+
+[CV] Loaded 5 folds from C:\Users\timba\HackatonML\bobathon-esilv\data\cv_folds.pkl
+Train: (44590, 13)   Test: (11013, 13)
+Folds loaded: 5
+
+=== Cross-validation (5 folds) ===
+  Fold 1: RMSE_raw=15.2230  RMSE_iso=14.5092
+  Fold 2: RMSE_raw=12.7980  RMSE_iso=10.3951
+  Fold 3: RMSE_raw=16.2851  RMSE_iso=13.2084
+  Fold 4: RMSE_raw=10.3059  RMSE_iso=8.8168
+  Fold 5: RMSE_raw=12.3815  RMSE_iso=10.5870
+
+Mean RMSE (raw)     : 13.3987
+Mean RMSE (isotonic): 11.5033
+
+Building skore evaluation graph …
+Running skore.evaluate …
+
