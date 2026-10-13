@@ -418,7 +418,7 @@ pred = X_op.skb.apply(skrub.TableVectorizer()).skb.apply(hgbr, y=y_op)
 
 # %%
 # ── Evaluate and publish ───────────────────────────────────────────────────────
-report = skore.evaluate(pred)
+report = skore.evaluate(pred, data={"visits": visits})
 project.put("15_final_dataops", report)
 print("Report saved: 15_final_dataops")
 print(report.metrics.rmse())

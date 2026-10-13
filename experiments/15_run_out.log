@@ -1,0 +1,30 @@
++--------------------------------- Login to Skore Hub ---------------------------------+
+|                                                                                      |
+|                        Successfully logged in, using API key.                        |
+|                                                                                      |
++--------------------------------------------------------------------------------------+
+Train raw: (44590, 13)
+Auto-drop 5 cols: ['patient_intercept', 'cohort_off_std_feat', 'cohort_slope_mean_feat', 'off_vs_gene_mean', 'off_vs_cohort_mean']
+After pruning: (44590, 76)
+
+
+
+
+
+
+
+  Putting 15_final_dataops 0:06:49
+Consult your report at 
+https://skore.probabl.ai/bob-slay/bobathon-esilv/cross-validations/65284
+Report saved: 15_final_dataops
+Estimator SkrubLearner          
+Aggregate         mean       std
+Metric                          
+RMSE          3.511639  0.040794
+Submission saved: submissions/15_final_dataops.csv  (11013 rows)
+   Index     target
+0     66  18.270307
+1     67  23.883824
+2     68  25.890439
+3     69  29.622383
+4     70  30.776895

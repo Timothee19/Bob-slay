@@ -60,6 +60,7 @@ Status values: planned | approved | running | done | abandoned.
 | `12_ensemble_RSearchSkrub` | skrub.tabular_pipeline (HistGBR) + HalvingRandomSearchCV 800 candidats, feature toggles EXP06/07/08/11, GroupKFold(5) | done | RMSE **3.801** ± 0.034 — [hub](https://skore.probabl.ai/bob-slay/bobathon-esilv/cross-validations/61871) clé `12_skrub_halvingsearch` | CONTEXT.md |
 | `13_skrub_halving_tuned` | Exp 12 + lr bas [0.005,0.01,0.02,0.05], max_leaf_nodes(20-512), l2 élargie, max_resources=3000, min_resources=300 | done | RMSE **3.500** ± 0.030 — [hub](https://skore.probabl.ai/bob-slay/bobathon-esilv/cross-validations/64707) clé `13_skrub_halving_tuned` | CONTEXT.md |
 | `14_skrub_drop_correlated` | Exp 13 + suppression manuelle colonnes catégorielles sources (rater_id/gene/cohort), pruning auto corr. Pearson \|r\|>0.98 (76 features après pruning), 100 candidats | done | RMSE **3.513** ± 0.030 — [hub](https://skore.probabl.ai/bob-slay/bobathon-esilv/cross-validations/65073) clé `14_skrub_drop_correlated` | CONTEXT.md |
+| `15_final_dataops` | Exp 14 best params figés dans un graphe skrub DataOps pur (DAY2 §6) : `skrub.var` + `mark_as_X(GroupKFold)` + `TableVectorizer` + `HistGBR` — aucune recherche supplémentaire | done | RMSE **3.512** ± 0.041 — [hub](https://skore.probabl.ai/bob-slay/bobathon-esilv/cross-validations/65284) clé `15_final_dataops` | CONTEXT.md |
 
 ## Backlog
 
